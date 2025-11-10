@@ -30,6 +30,24 @@ async function run() {
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
+    // database collection:
+    const db = client.db("utility-hub");
+    const billsCollection = db.collection("bills");
+    const myBillsCollection = db.collection("myBills")
+
+    // bills related all api
+     app.get("/bills", async (req, res) => {
+      const result = await billsCollection.find().toArray(); 
+      res.send(result);
+    });
+
+    // myBills related all api
+
+     app.get("/myBills", async (req, res) => {
+      const result = await myBillsCollection.find().toArray(); 
+      res.send(result);
+    });
+
 
   } finally {
     // await client.close();
@@ -39,5 +57,5 @@ run().catch(console.dir);
 
 
 app.listen(port, () => {
-  console.log(`My utility bill server is running on port : ${port}`)
+  console.log(`My Utility Hub server is running on port : ${port}`)
 })
