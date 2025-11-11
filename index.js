@@ -1,6 +1,6 @@
 const express = require('express')
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 const app = express()
 const port = process.env.PORT || 3000;
@@ -36,15 +36,33 @@ async function run() {
     const myBillsCollection = db.collection("myBills")
 
     // bills related all api
-     app.get("/bills", async (req, res) => {
-      const result = await billsCollection.find().toArray(); 
+    app.get("/bills", async (req, res) => {
+      const result = await billsCollection.find().toArray();
       res.send(result);
     });
 
+    app.get("/latest-bills", async (req, res) => {
+      const cursor = billsCollection.find().sort({ date: -1 }).limit(6);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    app.get("/bills/:id", async (req, res) => {
+      const { id } = req.params;
+      const objectId = new ObjectId(id);
+      const result = await billsCollection.findOne({ _id: objectId });
+      res.send(result);
+
+    });
+
+    // filter for bills by category
+   
+
+
     // myBills related all api
 
-     app.get("/myBills", async (req, res) => {
-      const result = await myBillsCollection.find().toArray(); 
+    app.get("/myBills", async (req, res) => {
+      const result = await myBillsCollection.find().toArray();
       res.send(result);
     });
 
