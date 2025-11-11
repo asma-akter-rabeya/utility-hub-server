@@ -66,9 +66,12 @@ async function run() {
 
     });
 
-    // filter for bills by category
+    app.post('/bills', async (req, res) => {
+            const newBill = req.body;
+            const result = await billsCollection.insertOne(newBill);
+            res.send(result);
+        })
     
-
 
     // myBills related all api
 
