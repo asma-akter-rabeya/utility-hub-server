@@ -34,6 +34,7 @@ async function run() {
     const db = client.db("utility-hub");
     const billsCollection = db.collection("bills");
     const myBillsCollection = db.collection("myBills")
+    const paidBillCollection = db.collection("paidBills")
 
 
     app.get("/bills", async (req, res) => {
@@ -71,7 +72,13 @@ async function run() {
             const result = await billsCollection.insertOne(newBill);
             res.send(result);
         })
-    
+
+    // saving bill data after paying bill
+    app.post('/paidBills', async (req, res) => {
+            const paidBill = req.body;
+            const result = await paidBillCollection.insertOne(paidBill);
+            res.send(result);
+        })
 
     // myBills related all api
 
