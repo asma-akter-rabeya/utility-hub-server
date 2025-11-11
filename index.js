@@ -35,10 +35,21 @@ async function run() {
     const billsCollection = db.collection("bills");
     const myBillsCollection = db.collection("myBills")
 
-    // bills related all api
+
     app.get("/bills", async (req, res) => {
-      const result = await billsCollection.find().toArray();
-      res.send(result);
+      try {
+        const { category } = req.query;
+        let query = {};
+
+        if (category && category !== "All") {
+          query.category = category;
+        }
+
+        const bills = await billsCollection.find(query).toArray();
+        res.status(200).send(bills);
+      } catch (error) {
+        res.status(500).send({ message: "Failed to fetch bills", error });
+      }
     });
 
     app.get("/latest-bills", async (req, res) => {
@@ -56,7 +67,7 @@ async function run() {
     });
 
     // filter for bills by category
-   
+    
 
 
     // myBills related all api
