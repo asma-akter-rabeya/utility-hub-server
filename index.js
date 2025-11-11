@@ -34,7 +34,6 @@ async function run() {
     const db = client.db("utility-hub");
     const billsCollection = db.collection("bills");
     const myBillsCollection = db.collection("myBills")
-    const paidBillCollection = db.collection("paidBills")
 
 
     app.get("/bills", async (req, res) => {
@@ -68,23 +67,83 @@ async function run() {
     });
 
     app.post('/bills', async (req, res) => {
-            const newBill = req.body;
-            const result = await billsCollection.insertOne(newBill);
-            res.send(result);
-        })
+      const newBill = req.body;
+      const result = await billsCollection.insertOne(newBill);
+      res.send(result);
+    })
 
-    // saving bill data after paying bill
-    app.post('/paidBills', async (req, res) => {
-            const paidBill = req.body;
-            const result = await paidBillCollection.insertOne(paidBill);
-            res.send(result);
-        })
+
 
     // myBills related all api
 
-    app.get("/myBills", async (req, res) => {
-      const result = await myBillsCollection.find().toArray();
+    // saving bill data after paying bill
+    app.post('/myBills', async (req, res) => {
+      const paidBill = req.body;
+      const result = await myBillsCollection.insertOne(paidBill);
       res.send(result);
+    })
+
+    // app.get("/myBills", async (req, res) => {
+    //   const result = await myBillsCollection.find().toArray();
+    //   res.send(result);
+    // });
+
+    app.get("/myBills", async (req, res) => {
+      try {
+        const { email } = req.query;
+        let query = {};
+        if (email) query.email = email;
+        const result = await myBillsCollection.find(query).toArray();
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({ message: "Failed to fetch user bills", error });
+      }
+    });
+
+
+    // Update a specific paid bill by ID
+    app.put('/myBills/:id', async (req, res) => {
+      try {
+        const id = req.params.id;
+        const updatedBill = req.body;
+
+        const filter = { _id: new ObjectId(id) };
+        const updateDoc = {
+          $set: {
+            amount: updatedBill.amount,
+            address: updatedBill.address,
+            phone: updatedBill.phone,
+            date: updatedBill.date,
+          },
+        };
+
+        const result = await myBillsCollection.updateOne(filter, updateDoc);
+        if (result.modifiedCount === 0) {
+          return res.status(404).send({ message: "No bill found to update." });
+        }
+
+        res.send({ message: "Bill updated successfully", result });
+      } catch (error) {
+        res.status(500).send({ message: "Failed to update bill", error });
+      }
+    });
+
+
+    // Delete a specific paid bill by ID
+    app.delete('/myBills/:id', async (req, res) => {
+      try {
+        const id = req.params.id;
+        const filter = { _id: new ObjectId(id) };
+        const result = await myBillsCollection.deleteOne(filter);
+
+        if (result.deletedCount === 0) {
+          return res.status(404).send({ message: "No bill found to delete." });
+        }
+
+        res.send({ message: "Bill deleted successfully", result });
+      } catch (error) {
+        res.status(500).send({ message: "Failed to delete bill", error });
+      }
     });
 
 
