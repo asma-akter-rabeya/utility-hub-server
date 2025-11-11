@@ -1,6 +1,10 @@
 const express = require('express')
 const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const admin = require("firebase-admin");
+require("dotenv").config();
+
+const serviceAccount = require("./utility-bill-5e1e2-firebase-adminsdk.json");
 
 const app = express()
 const port = process.env.PORT || 3000;
@@ -9,12 +13,17 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json())
 
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+
 app.get('/', (req, res) => {
   res.send('My utility bill server is running...')
 })
 // connecting the database
-//  my-utility-hub    krNUZ4m2TK7ETwnT
-const uri = "mongodb+srv://my-utility-hub:krNUZ4m2TK7ETwnT@cluster0.0dkhkz2.mongodb.net/?appName=Cluster0";
+
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.0dkhkz2.mongodb.net/?appName=Cluster0`;
 
 const client = new MongoClient(uri, {
   serverApi: {
@@ -23,6 +32,28 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   }
 });
+
+// secure data: 
+const verifyToken = async (req, res, next) => {
+  const authorization = req.headers.authorization;
+
+  if (!authorization) {
+    return res.status(401).send({
+      message: "unauthorized access. Token not found!",
+    });
+  }
+
+  const token = authorization.split(" ")[1];
+  try {
+    await admin.auth().verifyIdToken(token);
+
+    next();
+  } catch (error) {
+    res.status(401).send({
+      message: "unauthorized access.",
+    });
+  }
+};
 
 async function run() {
   try {
@@ -83,12 +114,8 @@ async function run() {
       res.send(result);
     })
 
-    // app.get("/myBills", async (req, res) => {
-    //   const result = await myBillsCollection.find().toArray();
-    //   res.send(result);
-    // });
 
-    app.get("/myBills", async (req, res) => {
+    app.get("/myBills", verifyToken,async (req, res) => {
       try {
         const { email } = req.query;
         let query = {};
@@ -101,7 +128,6 @@ async function run() {
     });
 
 
-    // Update a specific paid bill by ID
     app.put('/myBills/:id', async (req, res) => {
       try {
         const id = req.params.id;
@@ -129,7 +155,6 @@ async function run() {
     });
 
 
-    // Delete a specific paid bill by ID
     app.delete('/myBills/:id', async (req, res) => {
       try {
         const id = req.params.id;
